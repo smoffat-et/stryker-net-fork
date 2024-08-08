@@ -612,6 +612,38 @@ public class IgnoredMethodMutantFilter_NestedMethodCalls
         }
 
         [TestMethod]
+        [DataRow("Task.Delay")]
+        [DataRow("Task.*")]
+        [DataRow("*.Delay")]
+        public void MutantFilter_ShouldIgnoreAwaitExpression(string ignoredMethodName)
+        {
+            // Arrange
+            var source = @"
+public class IgnoredMethodMutantFilter_NestedMethodCalls
+{
+    private async Task TestMethodAsync()
+    {
+        await Task.Delay(0);
+    }
+}";
+
+            var mutant = BuildExpressionMutant(source, "await Task.Delay").Item1;
+
+            var options = new StrykerOptions
+            {
+                IgnoredMethods = new IgnoreMethodsInput { SuppliedInput = new[] { ignoredMethodName } }.Validate()
+            };
+
+            var sut = new IgnoredMethodMutantFilter();
+
+            // Act
+            var filteredMutants = sut.FilterMutants(new[] { mutant }, null, options);
+
+            // Assert
+            filteredMutants.ShouldNotContain(mutant);
+        }
+
+        [TestMethod]
         public void MutantFilters_DoesNotIgnoreOtherMutantsInFile()
         {
             // Arrange
